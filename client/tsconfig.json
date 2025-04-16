@@ -1,0 +1,61 @@
+{
+  "compilerOptions": {
+    /* Visit https://aka.ms/tsconfig.json to read more about this file */
+    "forceConsistentCasingInFileNames": true,
+    "target": "ES6",
+    "module": "NodeNext" /* Specify module code generation: 'none', 'commonjs', 'amd', 'system', 'umd', 'es2015', 'es2020', or 'ESNext'. */,
+    "moduleResolution": "NodeNext",
+    "strict": true /* Enable all strict type-checking options. */,
+    // "sourceMap": true,
+    "emitDecoratorMetadata": true,
+    // Это означает лишь, что в подобных ситуация разработчик должен явно писать any,
+    "noImplicitAny": true,
+    // "emitDeclarationOnly": true,  // for rollup build only
+    // "declarationDir": "types", // for rollup build only
+    "experimentalDecorators": true,
+    "useDefineForClassFields": true,
+    "allowJs": true,
+    "jsx": "react",
+    "resolveJsonModule": true,
+    "lib": [
+      "ES6",
+      "DOM",
+      "ES2020",
+      "ES2018"
+    ],
+    "typeRoots": [
+      "node_modules/@types/"
+    ],
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true,
+    // Для абсолютного импорта
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ],
+    },
+    "declaration": true,
+    "declarationDir": "./dist",
+    "rootDirs": [
+      "./src"
+    ],
+  },
+  "exclude": [
+    "node_modules",
+    "./public",
+    "build",
+    "dist",
+    "obj",
+  ],
+  "include": [
+    "./src/**/*",
+    "./.storybook/**/*"
+  ],
+  "ts-node": {
+    "compilerOptions": {
+      "module": "ESNext"
+    }
+  }
+}

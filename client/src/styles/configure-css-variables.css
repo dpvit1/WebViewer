@@ -1,0 +1,27 @@
+:root {
+  /*61B83A*/
+  --pr1: #2F83FB;
+  /* primary - основной цвет темы.*/
+  --pr2: hsl(from var(--pr1) h s calc(l + 15));
+  /* lighten "например: hover, disabled" */
+  --pr3: hsl(from var(--pr1) h s calc(l - 15));
+  /* darken  "например: active" */
+
+  /*fff*/
+  --sc1: #484848;
+  /* secondary - испольщуется для задания цветов текста. */
+  --sc2: hsl(from var(--sc1) h s calc(l + 15));
+  /* lighten "например: hover, disabled" */
+  --sc3: hsl(from var(--sc1) h s calc(l - 15));
+  /* darken  "например: highlight, active" */
+
+  /*3A3A3A*/
+  --bg1: #fff;
+  /* background - основной цвет фона. */
+  --bg2: hsl(from var(--bg1) h s calc(l - 5));
+  /* затемнение для светлого фона "например: hover" */
+  --bg3: hsl(from var(--bg1) h s calc(l - 15));
+  /*  "например: active" */
+  --bg4: hsl(from var(--bg1) h s calc(l - 15));
+  /* "например: tableHeaderCellHighlightBg" */
+}

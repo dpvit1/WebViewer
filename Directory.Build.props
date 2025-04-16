@@ -1,0 +1,52 @@
+<Project>
+
+  <!-- Очистить директории публикации и сборки -->
+  <Target Name="CleanOldBuild" BeforeTargets="Build">
+    <RemoveDir Directories="$(OutputPath)\RGK_dist" />
+  </Target>
+
+  <Target Name="CleanOldBuildForPublish" BeforeTargets="Publish">
+    <RemoveDir Directories="$(PublishDir)\RGK_dist" />
+  </Target>
+
+  <PropertyGroup>
+    <SharedFolderPath Condition="'$(RuntimeIdentifier)' == 'win-x64'">\\s2\mail\Vitushkin\RGK_ForWeb\</SharedFolderPath>
+    <SharedFolderPath Condition="'$(RuntimeIdentifier)' == 'linux-x64'">\\s2\mail\Vitushkin\RGK_For_Web_unix\</SharedFolderPath>
+    <SharedFolderPath Condition="'$(RuntimeIdentifier)' == ''">\\s2\mail\Vitushkin\RGK_ForWeb\</SharedFolderPath>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <SharedBinFolderPath Condition="'$(RuntimeIdentifier)' == 'win-x64'">\\s2\mail\Vitushkin\RGK_ForWeb\bin\</SharedBinFolderPath>
+    <SharedBinFolderPath Condition="'$(RuntimeIdentifier)' == 'linux-x64'">\\s2\mail\Vitushkin\RGK_For_Web_unix\bin\</SharedBinFolderPath>
+    <SharedBinFolderPath Condition="'$(RuntimeIdentifier)' == ''">\\s2\mail\Vitushkin\RGK_ForWeb\bin\</SharedBinFolderPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <SharedFiles Include="$(SharedFolderPath)**\*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <SharedBinFiles Include="$(SharedBinFolderPath)**\*.*" />
+  </ItemGroup>
+  
+  <!-- Копировать файлы в RGK_dist при сборке -->
+  <Target Name="CopySharedFolder" AfterTargets="Build">
+    <Copy SourceFiles="@(SharedFiles)" DestinationFolder="$(OutputPath)RGK_dist\%(RecursiveDir)"/>
+  </Target>
+
+  <!-- Копировать файлы из bin в корень при сборке -->
+  <Target Name="CopyBinFiles" AfterTargets="Build">
+    <Copy SourceFiles="@(SharedBinFiles)" DestinationFolder="$(OutputPath)"/>
+  </Target>
+
+  <!-- Копировать файлы в RGK_dist при публикации -->
+  <Target Name="CopySharedFolderAfterPublish" AfterTargets="Publish">
+    <Copy SourceFiles="@(SharedFiles)" DestinationFolder="$(PublishDir)RGK_dist\%(RecursiveDir)" />
+  </Target>
+
+  <!-- Копировать файлы из bin в корень при публикации -->
+  <Target Name="CopyBinFilesAfterPublish" AfterTargets="Publish">
+    <Copy SourceFiles="@(SharedBinFiles)" DestinationFolder="$(PublishDir)" />
+  </Target>
+
+</Project>
