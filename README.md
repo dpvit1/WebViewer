@@ -1,3 +1,9 @@
+1) Установить python 3.9, MSVC 22 с .Net, dotnet 9.0, pip install pythonnet
+2) Сделать копию appsetting.json, новый файл с именем appsettings.Development.json. Установить пути до установленного python 3.9
+3) Открыть Solution в MSVC 22, провести сборку проекта в Debug.
+4) Собрать RGKGLTF, скопировать ее + бинарники RGK в bin/Debug..., т.е в место, откуда запускается API.exe.
+5) Запустить проект под отладкой, перейти на http://localhost:5146/swagger и пробовать
+
 ## Предварительные действия по настройке проекта и запуск апи
 1. ```cd .\app``` установить pythonnet ```pip install pythonnet```
 2. добавить библиотеки ```RGK.dll``` и ```RGKPY.pyd``` в ```.\hello_from_python_lib\hello_from_python_lib```
