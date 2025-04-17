@@ -17,7 +17,7 @@ namespace API
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
-            builder.Services.AddScoped<PythonService>();
+            builder.Services.AddSingleton<PythonService>();
             builder.Services.AddScoped<FilesService>();
             builder.Services.AddScoped<FileRepository>();
             var pythonConfig = builder.Configuration.GetSection(nameof(PythonConfig));
@@ -42,8 +42,8 @@ namespace API
 
             app.UseHttpsRedirection();
 
-            Runtime.PythonDLL = pythonConfig.Get<PythonConfig>()!.PythonPath;
             var tempDir = pythonConfig.Get<PythonConfig>()!.TempFilesDir;
+
             if (!Directory.Exists(tempDir))
             {
                 Directory.CreateDirectory(tempDir);

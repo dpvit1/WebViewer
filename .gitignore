@@ -3,7 +3,6 @@ node_modules
 **/bin
 **/obj
 *.csproj.user
-*.Development.json
 **/.project
 **/.settings
 **/.toolstarget

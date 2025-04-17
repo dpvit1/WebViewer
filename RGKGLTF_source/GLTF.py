@@ -36,13 +36,7 @@ def CreateGLTF(vertices: list, FName: str):
     gltf.export_gltf(FName, save_file_resources=False)
     print("Export success")
 
-def UserCodeToGLTF(path_to_includes : str, user_code: str, gltf_path: str):
-    path_to_bin = path_to_includes + "\\bin"
-    path_to_python_libs = path_to_includes + "\python\PythonLib"
-    print("path_to_bin = ",path_to_bin)
-    print("path_to_python_libs = ",path_to_python_libs)
-    sys.path.insert(0,path_to_bin)
-    sys.path.insert(1,path_to_python_libs)
+def UserCodeToGLTF(user_code: str, gltf_path: str):
     import RGKPY
 
     bodies, context = ParseUserCode(user_code=user_code)
