@@ -1,6 +1,7 @@
 using API.Models;
 using API.Repositories;
 using API.Services;
+using NoopFormatter = API.Models.NoopFormatter;
 using Python.Runtime;
 
 namespace API
@@ -11,10 +12,7 @@ namespace API
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
-
             builder.Services.AddControllers();
-            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
             builder.Services.AddSingleton<PythonService>();
@@ -25,7 +23,6 @@ namespace API
 
             var app = builder.Build();
 
-            // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
                 builder.Configuration.AddJsonFile("appsettings.Development.json", reloadOnChange: true, optional: true);
