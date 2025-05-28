@@ -6,6 +6,8 @@ from gltflib import (
 import base64
 import sys
 import RGKPY
+from Model import Model
+from ModelStorage import ModelStorage
 
 context = None
 modelStorage = None
@@ -19,6 +21,9 @@ def Init():
     session.CreateMainContext(context)
     global modelStorage 
     modelStorage = ModelStorage()
+
+def Shutdown():
+    RGKPY.Common.Instance.End()
 
 def CreateGLTF(vertices: list, FName: str):
     vertex_bytearray = bytearray()
@@ -97,28 +102,3 @@ def ParseUserCode(user_id: str, user_code: str):
     exec(user_code, execution_context)
 
     return modelStorage.GetModel(user_id).GetBodies()
-
-class Model:
-    def __init__(self):
-        self.bodies = []
-
-    def AddBody(self, body):
-        self.bodies.append(body)
-    
-    def GetBodies(self) -> list:
-        return self.bodies
-    
-    def Clear(self):
-        self.bodies = []
-
-class ModelStorage:
-    def __init__(self):
-        self.models: dict[str, Model] = {}
-
-    def GetModel(self, user_id: str) -> Model:
-        if (user_id not in self.models):
-            self.models[user_id] = Model()
-        return self.models[user_id]
-    
-def DeleteUserData(self, user_id: str):
-    modelStorage[user_id].Clear()

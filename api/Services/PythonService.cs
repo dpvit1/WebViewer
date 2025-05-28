@@ -36,6 +36,7 @@ public class PythonService
 
     ~PythonService()
     {
+        rgkGLTFConvertLib.Shutdown();
         PythonEngine.Shutdown();
         PythonEngine.EndAllowThreads(mThreadState);
     }
