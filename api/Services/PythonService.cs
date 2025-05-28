@@ -9,6 +9,7 @@ public class PythonService
 {
     private readonly PythonConfig _fileStorageConfig;
     private readonly nint mThreadState;
+    private dynamic rgkGLTFConvertLib;
     public PythonService(IOptions<PythonConfig> fileStorageConfig)
     {
         RuntimeData.FormatterType = typeof(NoopFormatter);
@@ -26,6 +27,11 @@ public class PythonService
 
         PythonEngine.Initialize();
         mThreadState = PythonEngine.BeginAllowThreads();
+        using (Py.GIL())
+        {
+            rgkGLTFConvertLib = Py.Import("RGKGLTF");
+        }
+        rgkGLTFConvertLib.Init();
     }
 
     ~PythonService()
@@ -34,7 +40,7 @@ public class PythonService
         PythonEngine.EndAllowThreads(mThreadState);
     }
 
-    public void RunPythonScript(string fileName, string userCode)
+    public void RunPythonScript(string userId, string fileName, string userCode)
     {
         var fullFileName = fileName + ".gltf";
         var fullFilePathAndName = Path.Combine("./temp/", fullFileName);
@@ -47,8 +53,7 @@ public class PythonService
         {
             try
             {
-                dynamic rgkGLTFConvertLib = Py.Import("RGKGLTF");
-                rgkGLTFConvertLib.UserCodeToGLTF(userCode, fullFilePathAndName);
+                rgkGLTFConvertLib.UserCodeToGLTF(userId, userCode, fullFilePathAndName);
             }
             catch (Exception ex)
             {

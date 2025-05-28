@@ -5,22 +5,32 @@ from gltflib import (
     BufferTarget, ComponentType)
 import base64
 import sys
+import RGKPY
+
+context = None
+modelStorage = None
+
+def Init():
+    RGKPY.Common.Instance.Start()
+    session = RGKPY.Common.Session()
+    RGKPY.Common.Instance.CreateSession(session)
+    global context
+    context = RGKPY.Common.Context()
+    session.CreateMainContext(context)
+    global modelStorage 
+    modelStorage = ModelStorage()
 
 def CreateGLTF(vertices: list, FName: str):
-    #Создаем массив байтов
     vertex_bytearray = bytearray()
     for vertex in vertices:
         for value in vertex:
             vertex_bytearray.extend(struct.pack('f', value))
 
-    #Получаем длину массива байтов для выделения памяти буфера
     bytelen = len(vertex_bytearray)
 
-    #Находим минимальную и максимальную координаты
     mins = [min([operator.itemgetter(i)(vertex) for vertex in vertices]) for i in range(3)]
     maxs = [max([operator.itemgetter(i)(vertex) for vertex in vertices]) for i in range(3)]
 
-    #Создаем GLTF Модель
     model = GLTFModel(
         asset=Asset(version='2.0', copyright="Топ Системы"),
         scenes=[Scene(nodes=[0])],
@@ -34,36 +44,34 @@ def CreateGLTF(vertices: list, FName: str):
 
     gltf = GLTF(model=model)
     gltf.export_gltf(FName, save_file_resources=False)
-    print("Export success")
 
-def UserCodeToGLTF(user_code: str, gltf_path: str):
-    import RGKPY
+def UserCodeToGLTF(user_id: str, user_code: str, FName: str):
 
-    bodies, context = ParseUserCode(user_code=user_code)
+    bodies = ParseUserCode(user_id=user_id, user_code=user_code)
 
     faceterData = RGKPY.Generators.Faceter.Data()
     for body in bodies:
-        faceterData.AddBody(body)                                          #Добавляем тело
-    faceterData.SetSideLengthTolerance(0.2)                                #Устанавливаем максимальную длину треугольника
-    faceterData.SetNormalAngleTolerance(0.5)                               #Устанавливаем максимальный угол
-    faceterData.SetMeshMode(RGKPY.Generators.Faceter.MeshMode.TriangleMeshing)   #Устанавливаем триагональный режим вычисления
+        faceterData.AddBody(body)
+    faceterData.SetSideLengthTolerance(0.2)
+    faceterData.SetNormalAngleTolerance(0.5)
+    faceterData.SetMeshMode(RGKPY.Generators.Faceter.MeshMode.TriangleMeshing)
     faceterReport = RGKPY.Generators.Faceter.Report()
 
-    result = RGKPY.Generators.Faceter.Create(context, faceterData, faceterReport)    #Создаем сетку
+    result = RGKPY.Generators.Faceter.Create(context, faceterData, faceterReport)
 
-    surfaceMesh = faceterReport.GetMesh()                                  #Получаем сетку из результата построения
+    surfaceMesh = faceterReport.GetMesh()
 
-    vertices = []                                                   #Массив вершин созданных треугольников
+    vertices = []
 
-    for i in range(surfaceMesh.GetFaceCount()):                     #Проходимся по каждой грани фасетного тела
+    for i in range(surfaceMesh.GetFaceCount()):
         index = RGKPY.Mesh.FaceIndex(i)
         triangle  = RGKPY.Mesh.Triangle3D()
-        result = surfaceMesh.GetTriangle(index, triangle)           #Получаем треугольник
+        result = surfaceMesh.GetTriangle(index, triangle)
         if (result):
-            vertex1 = triangle.pt1()                                #Получаем вершины треугольника
+            vertex1 = triangle.pt1()
             vertex2 = triangle.pt2()
             vertex3 = triangle.pt3()
-            vertices.append([vertex1.GetX(),                        #Записываем координаты вершин в массив
+            vertices.append([vertex1.GetX(),
                             vertex1.GetY(), 
                             vertex1.GetZ()])
             vertices.append([vertex2.GetX(), 
@@ -73,29 +81,44 @@ def UserCodeToGLTF(user_code: str, gltf_path: str):
                             vertex3.GetY(), 
                             vertex3.GetZ()])
 
-    CreateGLTF(vertices, gltf_path)
+    CreateGLTF(vertices, FName)
+    print(f"Export success. User_id :{user_id}")
 
     RGKPY.Common.Instance.End()
 
-def ParseUserCode(user_code: str):
-    import RGKPY
+def ParseUserCode(user_id: str, user_code: str):
 
-    bodies = []
-    model=[]
     execution_context = {
         "RGKPY": RGKPY,
-        "model": model
+        "model": modelStorage.GetModel(user_id),
+        "context": context
     }
 
-    exec(user_code,execution_context)
+    exec(user_code, execution_context)
 
-    for body in model:
-        bodies.append(body)
+    return modelStorage.GetModel(user_id).GetBodies()
 
-    for line in user_code.splitlines():
-        if ('Common.Context' in line):
-            var_name = line[:line.find("=")].strip()
-            context = execution_context[var_name]
-            break
+class Model:
+    def __init__(self):
+        self.bodies = []
 
-    return bodies, context
+    def AddBody(self, body):
+        self.bodies.append(body)
+    
+    def GetBodies(self) -> list:
+        return self.bodies
+    
+    def Clear(self):
+        self.bodies = []
+
+class ModelStorage:
+    def __init__(self):
+        self.models: dict[str, Model] = {}
+
+    def GetModel(self, user_id: str) -> Model:
+        if (user_id not in self.models):
+            self.models[user_id] = Model()
+        return self.models[user_id]
+    
+def DeleteUserData(self, user_id: str):
+    modelStorage[user_id].Clear()

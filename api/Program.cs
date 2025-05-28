@@ -1,8 +1,6 @@
 using API.Models;
 using API.Repositories;
 using API.Services;
-using NoopFormatter = API.Models.NoopFormatter;
-using Python.Runtime;
 
 namespace API
 {
@@ -20,6 +18,15 @@ namespace API
             builder.Services.AddScoped<FileRepository>();
             var pythonConfig = builder.Configuration.GetSection(nameof(PythonConfig));
             builder.Services.Configure<PythonConfig>(pythonConfig);
+
+            builder.Services.AddDistributedMemoryCache();
+
+            builder.Services.AddSession(options =>
+            {
+                options.IdleTimeout = TimeSpan.FromMinutes(15);
+                options.Cookie.HttpOnly = true;
+                options.Cookie.IsEssential = true;
+            });
 
             var app = builder.Build();
 
@@ -50,9 +57,11 @@ namespace API
                 .AllowAnyHeader()
                 .AllowAnyMethod()
                 .WithExposedHeaders("Content-Disposition"));
+            app.UseRouting();
             app.UseAuthorization();
-            app.MapControllers();
+            app.UseSession();
 
+            app.MapControllers();
 
             app.Run();
         }

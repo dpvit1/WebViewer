@@ -46,11 +46,18 @@ namespace API.Controllers
         ///     body3 = report.GetBody(0)
         ///     model.append(body3)
         /// </remarks>
-        /// <returns>A 201 response code if successful.</returns>
+        /// <returns>A 204 response code if successful.</returns>
         [HttpPost]
         public ActionResult<string> Create([FromBody] CodeRequest codeRequest)
         {
-            _pythonService.RunPythonScript(codeRequest.FileName, codeRequest.Code);
+            string? userId = HttpContext.Session.GetString("UserId");
+            if (string.IsNullOrEmpty(userId))
+            {
+                HttpContext.Session.SetString("UserId", Guid.NewGuid().ToString());
+                userId = HttpContext.Session.GetString("UserId");
+            }
+
+            _pythonService.RunPythonScript(userId, codeRequest.FileName, codeRequest.Code);
             return NoContent();
         }
     }
