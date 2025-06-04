@@ -5,22 +5,17 @@ from gltflib import (
     BufferTarget, ComponentType)
 import base64
 import sys
+sys.path.append("C:\RGKWEB\RGK_Dist")
 import RGKPY
 from Model import Model
-from ModelStorage import ModelStorage
 
-context = None
-modelStorage = None
+RGKPY.Common.Instance.Start()
+session = RGKPY.Common.Session()
+RGKPY.Common.Instance.CreateSession(session)
 
-def Init():
-    RGKPY.Common.Instance.Start()
-    session = RGKPY.Common.Session()
-    RGKPY.Common.Instance.CreateSession(session)
-    global context
-    context = RGKPY.Common.Context()
-    session.CreateMainContext(context)
-    global modelStorage 
-    modelStorage = ModelStorage()
+context = RGKPY.Common.Context()
+session.CreateMainContext(context)
+model = Model()
 
 def Shutdown():
     RGKPY.Common.Instance.End()
@@ -50,9 +45,9 @@ def CreateGLTF(vertices: list, FName: str):
     gltf = GLTF(model=model)
     gltf.export_gltf(FName, save_file_resources=False)
 
-def UserCodeToGLTF(user_id: str, user_code: str, FName: str):
+def UserCodeToGLTF(user_code: str, FName: str):
 
-    bodies = ParseUserCode(user_id=user_id, user_code=user_code)
+    bodies = ParseUserCode(user_code)
 
     faceterData = RGKPY.Generators.Faceter.Data()
     for body in bodies:
@@ -87,18 +82,18 @@ def UserCodeToGLTF(user_id: str, user_code: str, FName: str):
                             vertex3.GetZ()])
 
     CreateGLTF(vertices, FName)
-    print(f"Export success. User_id :{user_id}")
+    print(f"Export success")
 
     RGKPY.Common.Instance.End()
 
-def ParseUserCode(user_id: str, user_code: str):
+def ParseUserCode(user_code: str):
 
     execution_context = {
         "RGKPY": RGKPY,
-        "model": modelStorage.GetModel(user_id),
+        "model": model,
         "context": context
     }
 
     exec(user_code, execution_context)
 
-    return modelStorage.GetModel(user_id).GetBodies()
+    return model.GetBodies()

@@ -2,47 +2,55 @@ using API.Models;
 using Microsoft.Extensions.Options;
 using NoopFormatter = API.Models.NoopFormatter;
 using Python.Runtime;
+using System.Collections.Concurrent;
+using System.Diagnostics;
 
 namespace API.Services;
 
-public class PythonService
+public class PythonService: IDisposable
 {
     private readonly PythonConfig _fileStorageConfig;
-    private readonly nint mThreadState;
-    private dynamic rgkGLTFConvertLib;
-    public PythonService(IOptions<PythonConfig> fileStorageConfig)
+    private readonly ConcurrentDictionary<string, Process> _userProcesses;
+    public PythonService(IOptions<PythonConfig> fileStorageConfig, IHostApplicationLifetime lifetime)
     {
+        lifetime.ApplicationStopping.Register(Dispose);
+
         RuntimeData.FormatterType = typeof(NoopFormatter);
         _fileStorageConfig = fileStorageConfig.Value;
 
-        string home = _fileStorageConfig.PythonHome;
-        Runtime.PythonDLL = Path.Combine(home, "python39.dll");
-        PythonEngine.PythonHome = home;
-        PythonEngine.PythonPath = string.Join(
-            ";",
-            $"{home}\\site-packages",
-            $"{home}\\DLLs",
-            $"{home}"
-        );
-
-        PythonEngine.Initialize();
-        mThreadState = PythonEngine.BeginAllowThreads();
-        using (Py.GIL())
+        _userProcesses = new ConcurrentDictionary<string, Process>();
+    }
+    public void Dispose()
+    {
+        foreach (var proc in _userProcesses.Values)
         {
-            rgkGLTFConvertLib = Py.Import("RGKGLTF");
+            try
+            {
+                if (!proc.HasExited) proc.Kill(true);
+            }
+            catch {}
+            finally
+            {
+                proc.Dispose();
+            }
         }
-        rgkGLTFConvertLib.Init();
     }
 
-    ~PythonService()
+    public async Task<int> RunPythonTaskAsync(string userId, string userCode, string fileName)
     {
-        rgkGLTFConvertLib.Shutdown();
-        PythonEngine.Shutdown();
-        PythonEngine.EndAllowThreads(mThreadState);
-    }
+        if (_userProcesses.TryGetValue(userId, out var existingProc))
+        {
+            if (!existingProc.HasExited)
+            {
+                return -1;
+            }
+            else
+            {
+                _userProcesses.TryRemove(userId, out _);
+                existingProc.Dispose();
+            }
+        }
 
-    public void RunPythonScript(string userId, string fileName, string userCode)
-    {
         var fullFileName = fileName + ".gltf";
         var fullFilePathAndName = Path.Combine("./temp/", fullFileName);
         if (File.Exists(fullFilePathAndName))
@@ -50,18 +58,51 @@ public class PythonService
             File.Delete(fullFilePathAndName);
         }
 
-        using (Py.GIL())
-        {
-            try
-            {
-                rgkGLTFConvertLib.UserCodeToGLTF(userId, userCode, fullFilePathAndName);
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"[PythonException] {ex.Message}\n{ex.StackTrace}");
-                throw new Exception(ex.Message);
-            }
-        }
+        var proc = StartWorkerProcess(userId, userCode, fullFilePathAndName);
+        _userProcesses[userId] = proc;
 
+        await proc.WaitForExitAsync().ConfigureAwait(false);
+
+        return proc.ExitCode;
+    }
+
+    private Process StartWorkerProcess(string userId, string userCode, string fileName)
+    {
+        string exePath;
+        string firstArg;
+
+        var entry = System.Reflection.Assembly.GetEntryAssembly()!.Location;
+        exePath = "dotnet";
+        firstArg = $"\"{entry}\"";
+
+        string args = $"{firstArg} --worker \"{_fileStorageConfig.PythonHome}\" \"{userCode}\" \"{fileName}\"";
+
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = exePath,
+            Arguments = args,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true
+        };
+
+        var proc = new Process { StartInfo = startInfo, EnableRaisingEvents = true };
+        proc.OutputDataReceived += (s, e) =>
+        {
+            if (!string.IsNullOrEmpty(e.Data))
+                Console.WriteLine($"[Worker:{userId}] {e.Data}");
+        };
+        proc.ErrorDataReceived += (s, e) =>
+        {
+            if (!string.IsNullOrEmpty(e.Data))
+                Console.Error.WriteLine($"[WorkerError:{userId}] {e.Data}");
+        };
+
+        proc.Start();
+        proc.BeginOutputReadLine();
+        proc.BeginErrorReadLine();
+
+        return proc;
     }
 }
