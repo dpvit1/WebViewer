@@ -117,10 +117,12 @@ builtins.print = write_to_cs
 ");
 
                     dynamic rgkGLTFConvertLib = Py.Import("RGKGLTF");
+                    rgkGLTFConvertLib.Init();
 
                     try
                     {
-                        rgkGLTFConvertLib.UserCodeToGLTF(userCode, fileName);
+                        rgkGLTFConvertLib.ParseUserCode(userCode);
+                        rgkGLTFConvertLib.CreateGLTF(fileName);
                     }
                     catch (PythonException Ex)
                     {
