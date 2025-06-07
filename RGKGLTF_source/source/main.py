@@ -4,11 +4,8 @@ from gltflib import (
     GLTF, GLTFModel, Asset, Scene, Node, Mesh, Primitive, Attributes, Buffer, BufferView, Accessor, AccessorType,
     BufferTarget, ComponentType)
 import base64
-import sys
 import RGKPY
-
-context = None
-modelStorage = None
+from Model import Model
 
 def Init():
     RGKPY.Common.Instance.Start()
@@ -17,10 +14,15 @@ def Init():
     global context
     context = RGKPY.Common.Context()
     session.CreateMainContext(context)
-    global modelStorage 
-    modelStorage = ModelStorage()
+    global model
+    model = Model()
 
-def CreateGLTF(vertices: list, FName: str):
+def Shutdown():
+    RGKPY.Common.Instance.End()
+
+def CreateGLTF(FName: str):
+    vertices = GetVertices()
+
     vertex_bytearray = bytearray()
     for vertex in vertices:
         for value in vertex:
@@ -45,9 +47,10 @@ def CreateGLTF(vertices: list, FName: str):
     gltf = GLTF(model=model)
     gltf.export_gltf(FName, save_file_resources=False)
 
-def UserCodeToGLTF(user_id: str, user_code: str, FName: str):
+    print("Export success")
 
-    bodies = ParseUserCode(user_id=user_id, user_code=user_code)
+def GetVertices():
+    bodies = model.GetBodies()
 
     faceterData = RGKPY.Generators.Faceter.Data()
     for body in bodies:
@@ -80,45 +83,16 @@ def UserCodeToGLTF(user_id: str, user_code: str, FName: str):
             vertices.append([vertex3.GetX(), 
                             vertex3.GetY(), 
                             vertex3.GetZ()])
+    return vertices
 
-    CreateGLTF(vertices, FName)
-    print(f"Export success. User_id :{user_id}")
-
-    RGKPY.Common.Instance.End()
-
-def ParseUserCode(user_id: str, user_code: str):
+def ParseUserCode(user_code: str):
 
     execution_context = {
         "RGKPY": RGKPY,
-        "model": modelStorage.GetModel(user_id),
+        "model": model,
         "context": context
     }
 
     exec(user_code, execution_context)
 
-    return modelStorage.GetModel(user_id).GetBodies()
-
-class Model:
-    def __init__(self):
-        self.bodies = []
-
-    def AddBody(self, body):
-        self.bodies.append(body)
-    
-    def GetBodies(self) -> list:
-        return self.bodies
-    
-    def Clear(self):
-        self.bodies = []
-
-class ModelStorage:
-    def __init__(self):
-        self.models: dict[str, Model] = {}
-
-    def GetModel(self, user_id: str) -> Model:
-        if (user_id not in self.models):
-            self.models[user_id] = Model()
-        return self.models[user_id]
-    
-def DeleteUserData(self, user_id: str):
-    modelStorage[user_id].Clear()
+    print("Successful python code execution")

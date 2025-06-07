@@ -16,7 +16,7 @@ public class PythonService
         _fileStorageConfig = fileStorageConfig.Value;
 
         string home = _fileStorageConfig.PythonHome;
-        Runtime.PythonDLL = Path.Combine(home, "python39.dll");
+        Runtime.PythonDLL = Path.Combine(home, "DLLs", "python39.dll");
         PythonEngine.PythonHome = home;
         PythonEngine.PythonPath = string.Join(
             ";",
@@ -53,7 +53,8 @@ public class PythonService
         {
             try
             {
-                rgkGLTFConvertLib.UserCodeToGLTF(userId, userCode, fullFilePathAndName);
+                rgkGLTFConvertLib.ParseUserCode(userCode);
+                rgkGLTFConvertLib.CreateGLTF(fileName);
             }
             catch (Exception ex)
             {
